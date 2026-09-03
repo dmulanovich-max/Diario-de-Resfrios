@@ -1,0 +1,22 @@
+DIARIO DE RESFRÍOS — PRIMERA VERSIÓN
+
+Incluye:
+- Registro diario de síntomas
+- Intensidad 0–5
+- Posible exposición
+- Surf/mar
+- Frío/traje mojado
+- Medicinas
+- Médico
+- Observaciones
+- Calendario mensual
+- Exportación CSV
+
+IMPORTANTE:
+Esta primera versión guarda los datos en el navegador del dispositivo (localStorage).
+No borres los datos del navegador si aún no has exportado una copia.
+
+Para probar en PC:
+abre index.html con un navegador.
+
+Para usar en iPhone como icono, necesitaremos publicar estos archivos en una dirección web segura (HTTPS).

@@ -1,0 +1,8 @@
+{
+  "name": "Diario de Resfríos",
+  "short_name": "Resfríos",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f7f4ef",
+  "theme_color": "#f7f4ef"
+}

@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="theme-color" content="#f7f4ef">
+  <link rel="manifest" href="manifest.json">
+  <title>Diario de Resfríos</title>
+  <style>
+    :root{
+      --bg:#f7f4ef; --card:#ffffff; --ink:#2f2f2f; --muted:#777;
+      --line:#ddd7cf; --accent:#b65f4d; --soft:#efe6df;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink)}
+    header{position:sticky;top:0;background:rgba(247,244,239,.96);backdrop-filter:blur(10px);padding:18px 16px 10px;border-bottom:1px solid var(--line);z-index:5}
+    h1{font-size:22px;margin:0 0 4px}
+    .sub{color:var(--muted);font-size:13px}
+    nav{display:flex;gap:8px;padding-top:12px}
+    nav button{flex:1;border:0;border-radius:12px;padding:10px;background:var(--soft);font-weight:600}
+    nav button.active{background:var(--accent);color:white}
+    main{padding:16px 16px 40px;max-width:720px;margin:auto}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.03)}
+    label.title{display:block;font-weight:700;margin-bottom:8px}
+    input[type="date"], input[type="text"], textarea, select{
+      width:100%;font-size:16px;padding:12px;border:1px solid var(--line);border-radius:12px;background:white
+    }
+    textarea{min-height:78px;resize:vertical}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .check{display:flex;align-items:center;gap:9px;border:1px solid var(--line);border-radius:12px;padding:11px;background:#fff}
+    .check input{width:20px;height:20px}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .save{width:100%;padding:14px;border:0;border-radius:14px;background:var(--accent);color:#fff;font-size:17px;font-weight:700}
+    .secondary{width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;background:#fff;font-weight:600}
+    .calendar-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+    .calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+    .dow,.day{text-align:center}
+    .dow{font-size:12px;color:var(--muted);padding:4px}
+    .day{min-height:48px;border-radius:12px;background:white;border:1px solid var(--line);padding:6px;font-size:13px}
+    .day.has{border-color:var(--accent)}
+    .day .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);margin:5px auto 0}
+    .day.empty{border-color:transparent;background:transparent}
+    .hidden{display:none}
+    .small{font-size:12px;color:var(--muted)}
+    .status{margin-top:10px;text-align:center;font-size:13px;color:var(--muted)}
+    .episode{padding:10px 0;border-bottom:1px solid var(--line)}
+    .episode:last-child{border-bottom:0}
+  </style>
+</head>
+<body>
+<header>
+  <h1>Diario de Resfríos</h1>
+  <div class="sub">Registro diario simple para ver evolución y patrones</div>
+  <nav>
+    <button id="tab-registro" class="active">Hoy</button>
+    <button id="tab-calendario">Calendario</button>
+    <button id="tab-datos">Datos</button>
+  </nav>
+</header>
+
+<main>
+  <section id="view-registro">
+    <div class="card">
+      <label class="title" for="fecha">Fecha</label>
+      <input id="fecha" type="date">
+    </div>
+
+    <div class="card">
+      <label class="title">Síntomas</label>
+      <div class="grid" id="sintomas"></div>
+    </div>
+
+    <div class="card">
+      <label class="title" for="intensidad">Intensidad general</label>
+      <select id="intensidad">
+        <option value="0">0 — Sin síntomas</option>
+        <option value="1">1 — Muy leve</option>
+        <option value="2">2 — Leve</option>
+        <option value="3">3 — Moderado</option>
+        <option value="4">4 — Fuerte</option>
+        <option value="5">5 — Muy fuerte</option>
+      </select>
+    </div>
+
+    <div class="card">
+      <div class="row">
+        <label class="check"><input id="surf" type="checkbox"> Surf / mar</label>
+        <label class="check"><input id="frio" type="checkbox"> Frío / traje mojado</label>
+      </div>
+    </div>
+
+    <div class="card">
+      <label class="title" for="exposicion">Posible exposición</label>
+      <input id="exposicion" type="text" placeholder="Ej. reunión, mucha gente, viaje...">
+    </div>
+
+    <div class="card">
+      <label class="title" for="medicinas">Medicinas</label>
+      <input id="medicinas" type="text" placeholder="Ej. Panadol, Allegra...">
+    </div>
+
+    <div class="card">
+      <label class="title" for="medico">Médico</label>
+      <input id="medico" type="text" placeholder="Nombre o especialidad">
+    </div>
+
+    <div class="card">
+      <label class="title" for="observaciones">Observaciones</label>
+      <textarea id="observaciones" placeholder="Cómo te sentiste, cambios, algo importante..."></textarea>
+    </div>
+
+    <button class="save" id="guardar">Guardar día</button>
+    <div class="status" id="estado"></div>
+  </section>
+
+  <section id="view-calendario" class="hidden">
+    <div class="card">
+      <div class="calendar-head">
+        <button class="secondary" id="prev" style="width:auto">←</button>
+        <strong id="mesTitulo"></strong>
+        <button class="secondary" id="next" style="width:auto">→</button>
+      </div>
+      <div class="calendar" id="calendar">
+        <div class="dow">L</div><div class="dow">M</div><div class="dow">X</div>
+        <div class="dow">J</div><div class="dow">V</div><div class="dow">S</div><div class="dow">D</div>
+      </div>
+      <p class="small">Los días con registro aparecen marcados. Toca uno para editarlo.</p>
+    </div>
+  </section>
+
+  <section id="view-datos" class="hidden">
+    <div class="card">
+      <label class="title">Exportar</label>
+      <p class="small">Descarga todos tus registros en CSV. Luego podemos convertirlos en un Excel más bonito para tu doctora.</p>
+      <button class="secondary" id="exportar">Exportar CSV</button>
+    </div>
+    <div class="card">
+      <label class="title">Registros guardados</label>
+      <div id="lista"></div>
+    </div>
+  </section>
+</main>
+
+<script>
+const SINTOMAS = [
+  "Dolor de cuerpo","Cansancio","Sueño","Dolor de cabeza","Congestión nasal",
+  "Dolor de oído","Mucosidad","Picazón de pecho","Dolor de garganta","Crujido bronquial","Fiebre"
+];
+
+const $ = id => document.getElementById(id);
+const sintomasBox = $("sintomas");
+SINTOMAS.forEach((s,i)=>{
+  const lab=document.createElement("label"); lab.className="check";
+  lab.innerHTML=`<input type="checkbox" data-sintoma="${s}" id="s${i}"> ${s}`;
+  sintomasBox.appendChild(lab);
+});
+
+function hoyISO(){
+  const d=new Date(); const off=d.getTimezoneOffset(); return new Date(d.getTime()-off*60000).toISOString().slice(0,10);
+}
+$("fecha").value=hoyISO();
+
+function cargarDatos(){
+  try{return JSON.parse(localStorage.getItem("diarioResfrios")||"{}")}catch(e){return{}}
+}
+function guardarDatos(data){localStorage.setItem("diarioResfrios",JSON.stringify(data))}
+function leerFormulario(){
+  const sintomas=[...document.querySelectorAll("[data-sintoma]:checked")].map(x=>x.dataset.sintoma);
+  return {
+    fecha:$("fecha").value, sintomas, intensidad:Number($("intensidad").value),
+    surf:$("surf").checked, frio:$("frio").checked, exposicion:$("exposicion").value.trim(),
+    medicinas:$("medicinas").value.trim(), medico:$("medico").value.trim(),
+    observaciones:$("observaciones").value.trim()
+  }
+}
+function cargarFormulario(fecha){
+  const d=cargarDatos()[fecha];
+  $("fecha").value=fecha;
+  document.querySelectorAll("[data-sintoma]").forEach(x=>x.checked=false);
+  $("intensidad").value=d?.intensidad ?? 0;
+  $("surf").checked=!!d?.surf; $("frio").checked=!!d?.frio;
+  $("exposicion").value=d?.exposicion||""; $("medicinas").value=d?.medicinas||"";
+  $("medico").value=d?.medico||""; $("observaciones").value=d?.observaciones||"";
+  (d?.sintomas||[]).forEach(s=>{const x=[...document.querySelectorAll("[data-sintoma]")].find(y=>y.dataset.sintoma===s); if(x)x.checked=true});
+}
+$("fecha").addEventListener("change",e=>cargarFormulario(e.target.value));
+$("guardar").onclick=()=>{
+  const r=leerFormulario(); if(!r.fecha)return;
+  const data=cargarDatos(); data[r.fecha]=r; guardarDatos(data);
+  $("estado").textContent="Guardado ✓";
+  setTimeout(()=>$("estado").textContent="",1800);
+  renderCalendar(); renderLista();
+};
+
+function show(name){
+  ["registro","calendario","datos"].forEach(n=>{
+    $("view-"+n).classList.toggle("hidden",n!==name);
+    $("tab-"+n).classList.toggle("active",n===name);
+  });
+  if(name==="calendario")renderCalendar();
+  if(name==="datos")renderLista();
+}
+$("tab-registro").onclick=()=>show("registro");
+$("tab-calendario").onclick=()=>show("calendario");
+$("tab-datos").onclick=()=>show("datos");
+
+let calDate=new Date();
+function renderCalendar(){
+  const y=calDate.getFullYear(), m=calDate.getMonth();
+  $("mesTitulo").textContent=calDate.toLocaleDateString("es-ES",{month:"long",year:"numeric"});
+  const cal=$("calendar");
+  [...cal.querySelectorAll(".day")].forEach(x=>x.remove());
+  let first=(new Date(y,m,1).getDay()+6)%7;
+  const days=new Date(y,m+1,0).getDate();
+  for(let i=0;i<first;i++){let e=document.createElement("div");e.className="day empty";cal.appendChild(e)}
+  const data=cargarDatos();
+  for(let d=1;d<=days;d++){
+    const iso=`${y}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+    const e=document.createElement("button"); e.className="day"+(data[iso]?" has":"");
+    e.innerHTML=`${d}${data[iso]?'<div class="dot"></div>':''}`;
+    e.onclick=()=>{cargarFormulario(iso);show("registro")};
+    cal.appendChild(e);
+  }
+}
+$("prev").onclick=()=>{calDate=new Date(calDate.getFullYear(),calDate.getMonth()-1,1);renderCalendar()};
+$("next").onclick=()=>{calDate=new Date(calDate.getFullYear(),calDate.getMonth()+1,1);renderCalendar()};
+
+function csvEscape(v){
+  const s=Array.isArray(v)?v.join(" | "):String(v??"");
+  return '"'+s.replaceAll('"','""')+'"';
+}
+$("exportar").onclick=()=>{
+  const data=Object.values(cargarDatos()).sort((a,b)=>a.fecha.localeCompare(b.fecha));
+  const headers=["fecha","intensidad","sintomas","surf","frio","exposicion","medicinas","medico","observaciones"];
+  const rows=[headers.join(","),...data.map(r=>headers.map(h=>csvEscape(r[h])).join(","))];
+  const blob=new Blob(["\ufeff"+rows.join("\n")],{type:"text/csv;charset=utf-8"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="diario_resfrios.csv"; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+function renderLista(){
+  const data=Object.values(cargarDatos()).sort((a,b)=>b.fecha.localeCompare(a.fecha));
+  $("lista").innerHTML=data.length?data.map(r=>`
+    <div class="episode"><strong>${r.fecha}</strong> · Intensidad ${r.intensidad}
+    <div class="small">${r.sintomas?.join(", ")||"Sin síntomas marcados"}</div></div>`).join("")
+    :'<div class="small">Todavía no hay registros.</div>';
+}
+cargarFormulario($("fecha").value);
+</script>
+</body>
+</html>
