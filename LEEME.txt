@@ -1,22 +1,14 @@
-DIARIO DE RESFRÍOS — PRIMERA VERSIÓN
+DIARIO DE RESFRÍOS — V2
 
-Incluye:
-- Registro diario de síntomas
-- Intensidad 0–5
-- Posible exposición
-- Surf/mar
-- Frío/traje mojado
-- Medicinas
-- Médico
-- Observaciones
-- Calendario mensual
-- Exportación CSV
+Novedades:
+- Intensidad 0–3 para cada síntoma.
+- Se mantiene intensidad general 0–5.
+- Nuevos síntomas: pesadez/congestión de cabeza seca, tos, sensación de frío, molestias estomacales, dolor de espalda, dolor sacroilíaco y dolor de pierna.
+- Actividades: surf, natación, caminata, entrenamiento, fisioterapia, descanso y otra.
+- Casilla independiente para aplicación de Amgevita.
+- Exportación CSV con intensidad de cada síntoma.
 
-IMPORTANTE:
-Esta primera versión guarda los datos en el navegador del dispositivo (localStorage).
-No borres los datos del navegador si aún no has exportado una copia.
+Compatibilidad:
+Los registros antiguos de V1 siguen siendo legibles. Un síntoma que antes estaba marcado se interpreta como nivel 1 (leve).
 
-Para probar en PC:
-abre index.html con un navegador.
-
-Para usar en iPhone como icono, necesitaremos publicar estos archivos en una dirección web segura (HTTPS).
+Los datos siguen guardándose localmente en el navegador del dispositivo.
