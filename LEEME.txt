@@ -1,1 +1,1 @@
-V2.1: calendario con punto marrón=resfrío, azul=Amgevita, rojo=dolor/lesión. Dolores separados: Cuádriceps, Sacroilíaco, Espalda, Hombro y Otro. Compatible con registros previos.
+V2.1.1: corrección de navegación y calendario. Conserva los registros locales y los campos anteriores. No borres ni reinstales la aplicación. Exporta una copia de seguridad antes de actualizar.
