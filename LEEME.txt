@@ -1,14 +1,1 @@
-DIARIO DE RESFRÍOS — V2
-
-Novedades:
-- Intensidad 0–3 para cada síntoma.
-- Se mantiene intensidad general 0–5.
-- Nuevos síntomas: pesadez/congestión de cabeza seca, tos, sensación de frío, molestias estomacales, dolor de espalda, dolor sacroilíaco y dolor de pierna.
-- Actividades: surf, natación, caminata, entrenamiento, fisioterapia, descanso y otra.
-- Casilla independiente para aplicación de Amgevita.
-- Exportación CSV con intensidad de cada síntoma.
-
-Compatibilidad:
-Los registros antiguos de V1 siguen siendo legibles. Un síntoma que antes estaba marcado se interpreta como nivel 1 (leve).
-
-Los datos siguen guardándose localmente en el navegador del dispositivo.
+V2.1: calendario con punto marrón=resfrío, azul=Amgevita, rojo=dolor/lesión. Dolores separados: Cuádriceps, Sacroilíaco, Espalda, Hombro y Otro. Compatible con registros previos.

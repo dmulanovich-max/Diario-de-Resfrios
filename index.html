@@ -1,121 +1,31 @@
-<!doctype html>
-<html lang="es">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#f7f4ef">
-<link rel="manifest" href="manifest.json">
-<title>Diario de Resfríos</title>
-<style>
-:root{--bg:#f7f4ef;--card:#fff;--ink:#2f2f2f;--muted:#777;--line:#ddd7cf;--accent:#b65f4d;--soft:#efe6df}
-*{box-sizing:border-box} body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink)}
-header{position:sticky;top:0;background:rgba(247,244,239,.96);padding:18px 16px 10px;border-bottom:1px solid var(--line);z-index:5}
-h1{font-size:22px;margin:0 0 4px} .sub,.small,.desc{font-size:12px;color:var(--muted)}
-nav{display:flex;gap:8px;padding-top:12px} nav button{flex:1;border:0;border-radius:12px;padding:10px;background:var(--soft);font-weight:600}
-nav button.active{background:var(--accent);color:#fff}
-main{padding:16px 16px 40px;max-width:760px;margin:auto}
-.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:14px}
-.title{display:block;font-weight:700;margin-bottom:8px}
-input[type=date],input[type=text],textarea,select{width:100%;font-size:16px;padding:12px;border:1px solid var(--line);border-radius:12px;background:#fff}
-textarea{min-height:78px}
-.sym{padding:11px 0;border-bottom:1px solid var(--line)} .sym:last-child{border-bottom:0}
-.name{font-weight:600;margin-bottom:6px} .desc{margin-bottom:8px}
-.levels{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
-.level{border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px 4px;font-size:12px}
-.level.active{background:var(--accent);color:#fff;border-color:var(--accent)}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.check{display:flex;align-items:center;gap:9px;border:1px solid var(--line);border-radius:12px;padding:11px;background:#fff}
-.check input{width:20px;height:20px}
-.save,.secondary{width:100%;padding:13px;border-radius:13px;font-weight:700}
-.save{border:0;background:var(--accent);color:#fff;font-size:17px} .secondary{border:1px solid var(--line);background:#fff}
-.hidden{display:none} .status{text-align:center;margin-top:10px;color:var(--muted);font-size:13px}
-.calendar-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
-.calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:6px} .dow,.day{text-align:center}
-.dow{font-size:12px;color:var(--muted)} .day{min-height:48px;border-radius:12px;background:#fff;border:1px solid var(--line);padding:6px}
-.day.empty{background:transparent;border-color:transparent} .day.has{border-color:var(--accent)} .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);margin:5px auto 0}
-.episode{padding:10px 0;border-bottom:1px solid var(--line)}
-</style>
-</head>
-<body>
-<header>
-<h1>Diario de Resfríos</h1>
-<div class="sub">Síntomas, actividad y evolución diaria</div>
-<nav><button id="tab-registro" class="active">Hoy</button><button id="tab-calendario">Calendario</button><button id="tab-datos">Datos</button></nav>
-</header>
-<main>
-<section id="view-registro">
-<div class="card"><label class="title">Fecha</label><input id="fecha" type="date"></div>
-<div class="card"><label class="title">Síntomas</label><div class="small" style="margin-bottom:8px">0 Nada · 1 Leve · 2 Moderado · 3 Fuerte</div><div id="sintomas"></div></div>
-<div class="card"><label class="title">Intensidad general</label><select id="intensidad">
-<option value="0">0 — Sin síntomas</option><option value="1">1 — Muy leve</option><option value="2">2 — Leve</option><option value="3">3 — Moderado</option><option value="4">4 — Fuerte</option><option value="5">5 — Muy fuerte</option></select></div>
-<div class="card"><label class="title">Actividad</label><div class="grid">
-<label class="check"><input id="act_surf" type="checkbox">Surf</label>
-<label class="check"><input id="act_natacion" type="checkbox">Natación</label>
-<label class="check"><input id="act_caminata" type="checkbox">Caminata</label>
-<label class="check"><input id="act_entrenamiento" type="checkbox">Entrenamiento</label>
-<label class="check"><input id="act_fisio" type="checkbox">Fisioterapia</label>
-<label class="check"><input id="act_descanso" type="checkbox">Descanso</label></div>
-<div style="margin-top:10px"><input id="actividad_otro" type="text" placeholder="Otra actividad (opcional)"></div></div>
-<div class="card"><label class="title">Circunstancias</label><div class="grid">
-<label class="check"><input id="frio" type="checkbox">Frío / traje mojado</label>
-<label class="check"><input id="amgevita" type="checkbox">Aplicación de Amgevita hoy</label></div></div>
-<div class="card"><label class="title">Posible exposición</label><input id="exposicion" type="text" placeholder="Ej. reunión, mucha gente, viaje..."></div>
-<div class="card"><label class="title">Medicinas</label><input id="medicinas" type="text" placeholder="Ej. Panadol, Allegra..."></div>
-<div class="card"><label class="title">Médico</label><input id="medico" type="text" placeholder="Nombre o especialidad"></div>
-<div class="card"><label class="title">Observaciones</label><textarea id="observaciones" placeholder="Cómo te sentiste, cambios, algo importante..."></textarea></div>
-<button class="save" id="guardar">Guardar día</button><div class="status" id="estado"></div>
-</section>
-<section id="view-calendario" class="hidden"><div class="card"><div class="calendar-head"><button class="secondary" id="prev" style="width:auto">←</button><strong id="mesTitulo"></strong><button class="secondary" id="next" style="width:auto">→</button></div><div class="calendar" id="calendar"><div class="dow">L</div><div class="dow">M</div><div class="dow">X</div><div class="dow">J</div><div class="dow">V</div><div class="dow">S</div><div class="dow">D</div></div><p class="small">Los días con registro aparecen marcados. Toca uno para editarlo.</p></div></section>
-<section id="view-datos" class="hidden"><div class="card"><label class="title">Exportar</label><p class="small">Descarga todos tus registros en CSV para abrirlos en Excel.</p><button class="secondary" id="exportar">Exportar CSV</button></div><div class="card"><label class="title">Registros guardados</label><div id="lista"></div></div></section>
-</main>
-<script>
-const SINTOMAS=[{"k": "Dolor de cuerpo", "d": ""}, {"k": "Cansancio", "d": ""}, {"k": "Sueño", "d": ""}, {"k": "Dolor de cabeza", "d": "Dolor propiamente dicho."}, {"k": "Pesadez/congestión de cabeza", "d": "Sensación seca de presión o pesadez en nariz, ojos y oídos, sin dolor."}, {"k": "Congestión nasal", "d": "Nariz congestionada propiamente."}, {"k": "Dolor de oído", "d": ""}, {"k": "Mucosidad", "d": ""}, {"k": "Tos", "d": ""}, {"k": "Picazón de pecho", "d": ""}, {"k": "Dolor de garganta", "d": ""}, {"k": "Crujido bronquial", "d": ""}, {"k": "Sensación de frío", "d": ""}, {"k": "Fiebre", "d": ""}, {"k": "Molestias estomacales", "d": ""}, {"k": "Dolor de espalda", "d": ""}, {"k": "Dolor sacroilíaco", "d": ""}, {"k": "Dolor de pierna", "d": "Dolor particular que suele acompañar tus episodios."}];
-const ACTIVIDADES=[["act_surf","Surf"],["act_natacion","Natación"],["act_caminata","Caminata"],["act_entrenamiento","Entrenamiento"],["act_fisio","Fisioterapia"],["act_descanso","Descanso"]];
-const $=id=>document.getElementById(id);
-SINTOMAS.forEach(s=>{
- let w=document.createElement("div"); w.className="sym";
- w.innerHTML=`<div class="name">${s.k}</div>${s.d?`<div class="desc">${s.d}</div>`:""}<div class="levels" data-symptom="${s.k}"><button type="button" class="level active" data-level="0">0 Nada</button><button type="button" class="level" data-level="1">1 Leve</button><button type="button" class="level" data-level="2">2 Moderado</button><button type="button" class="level" data-level="3">3 Fuerte</button></div>`;
- $("sintomas").appendChild(w);
-});
-document.querySelectorAll(".levels").forEach(g=>g.onclick=e=>{if(!e.target.classList.contains("level"))return;g.querySelectorAll(".level").forEach(b=>b.classList.remove("active"));e.target.classList.add("active")});
-function hoyISO(){let d=new Date(),o=d.getTimezoneOffset();return new Date(d.getTime()-o*60000).toISOString().slice(0,10)}
-$("fecha").value=hoyISO();
-function datos(){try{return JSON.parse(localStorage.getItem("diarioResfrios")||"{}")}catch(e){return {}}}
-function saveDatos(d){localStorage.setItem("diarioResfrios",JSON.stringify(d))}
-function niveles(){let o={};document.querySelectorAll(".levels").forEach(g=>o[g.dataset.symptom]=Number(g.querySelector(".active").dataset.level));return o}
-function setNivel(n,v){let g=[...document.querySelectorAll(".levels")].find(x=>x.dataset.symptom===n);if(g)g.querySelectorAll(".level").forEach(b=>b.classList.toggle("active",Number(b.dataset.level)===Number(v||0)))}
-function leer(){
- let n=niveles(), acts=ACTIVIDADES.filter(([id])=>$(id).checked).map(([,n])=>n);
- return {fecha:$("fecha").value,sintomas_niveles:n,sintomas:Object.entries(n).filter(([,v])=>v>0).map(([k])=>k),intensidad:Number($("intensidad").value),actividades:acts,actividad_otro:$("actividad_otro").value.trim(),frio:$("frio").checked,amgevita:$("amgevita").checked,exposicion:$("exposicion").value.trim(),medicinas:$("medicinas").value.trim(),medico:$("medico").value.trim(),observaciones:$("observaciones").value.trim()};
-}
-function cargar(f){
- let d=datos()[f]; $("fecha").value=f;
- SINTOMAS.forEach(s=>{let v=d?.sintomas_niveles?.[s.k]; if(v===undefined)v=(d?.sintomas||[]).includes(s.k)?1:0; setNivel(s.k,v)});
- $("intensidad").value=d?.intensidad??0;
- ACTIVIDADES.forEach(([id,n])=>$(id).checked=(d?.actividades||[]).includes(n)||(n==="Surf"&&!!d?.surf));
- $("actividad_otro").value=d?.actividad_otro||""; $("frio").checked=!!d?.frio; $("amgevita").checked=!!d?.amgevita;
- $("exposicion").value=d?.exposicion||"";$("medicinas").value=d?.medicinas||"";$("medico").value=d?.medico||"";$("observaciones").value=d?.observaciones||"";
-}
-$("fecha").onchange=e=>cargar(e.target.value);
-$("guardar").onclick=()=>{let r=leer(),d=datos();d[r.fecha]=r;saveDatos(d);$("estado").textContent="Guardado ✓";setTimeout(()=>$("estado").textContent="",1800);renderCal();renderLista()};
-function show(n){["registro","calendario","datos"].forEach(x=>{$("view-"+x).classList.toggle("hidden",x!==n);$("tab-"+x).classList.toggle("active",x===n)});if(n==="calendario")renderCal();if(n==="datos")renderLista()}
-$("tab-registro").onclick=()=>show("registro");$("tab-calendario").onclick=()=>show("calendario");$("tab-datos").onclick=()=>show("datos");
-let calDate=new Date();
-function renderCal(){
- let y=calDate.getFullYear(),m=calDate.getMonth();$("mesTitulo").textContent=calDate.toLocaleDateString("es-ES",{month:"long",year:"numeric"});
- let c=$("calendar");[...c.querySelectorAll(".day")].forEach(x=>x.remove());let first=(new Date(y,m,1).getDay()+6)%7,ds=new Date(y,m+1,0).getDate(),d=datos();
- for(let i=0;i<first;i++){let e=document.createElement("div");e.className="day empty";c.appendChild(e)}
- for(let n=1;n<=ds;n++){let iso=`${y}-${String(m+1).padStart(2,"0")}-${String(n).padStart(2,"0")}`,e=document.createElement("button");e.className="day"+(d[iso]?" has":"");e.innerHTML=`${n}${d[iso]?'<div class="dot"></div>':""}`;e.onclick=()=>{cargar(iso);show("registro")};c.appendChild(e)}
-}
-$("prev").onclick=()=>{calDate=new Date(calDate.getFullYear(),calDate.getMonth()-1,1);renderCal()};$("next").onclick=()=>{calDate=new Date(calDate.getFullYear(),calDate.getMonth()+1,1);renderCal()};
-function esc(v){let s=Array.isArray(v)?v.join(" | "):String(v??"");return '"'+s.replaceAll('"','""')+'"'}
-$("exportar").onclick=()=>{let rows=Object.values(datos()).sort((a,b)=>a.fecha.localeCompare(b.fecha)),sh=SINTOMAS.map(s=>s.k),h=["fecha","intensidad_general",...sh,"actividades","actividad_otro","frio_traje_mojado","amgevita","exposicion","medicinas","medico","observaciones"],out=[h.map(esc).join(",")];
- rows.forEach(r=>{let n=r.sintomas_niveles||{},vals=[r.fecha,r.intensidad??0,...sh.map(s=>n[s]??((r.sintomas||[]).includes(s)?1:0)),r.actividades||((r.surf)?["Surf"]:[]),r.actividad_otro||"",!!r.frio,!!r.amgevita,r.exposicion||"",r.medicinas||"",r.medico||"",r.observaciones||""];out.push(vals.map(esc).join(","))});
- let blob=new Blob(["\ufeff"+out.join("\n")],{type:"text/csv;charset=utf-8"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="diario_resfrios_v2.csv";a.click();
-};
-function renderLista(){let r=Object.values(datos()).sort((a,b)=>b.fecha.localeCompare(a.fecha));$("lista").innerHTML=r.length?r.map(x=>`<div class="episode"><strong>${x.fecha}</strong> · Intensidad general ${x.intensidad??0}<div class="small">${(x.sintomas||[]).join(", ")||"Sin síntomas marcados"}${x.amgevita?" · Amgevita":""}</div></div>`).join(""):'<div class="small">Todavía no hay registros.</div>'}
-cargar($("fecha").value);
-</script>
-</body>
-</html>
+<!doctype html><html lang=es><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name=apple-mobile-web-app-capable content=yes><link rel=manifest href=manifest.json><title>Diario de Resfríos</title><style>
+:root{--bg:#f7f4ef;--line:#ddd7cf;--accent:#b65f4d}*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:#303030}header{position:sticky;top:0;background:#f7f4eff5;padding:18px 16px 10px;border-bottom:1px solid var(--line);z-index:3}h1{font-size:22px;margin:0}.sub,.small{font-size:12px;color:#777}nav{display:flex;gap:8px;margin-top:12px}nav button{flex:1;border:0;border-radius:12px;padding:10px;background:#efe6df;font-weight:600}nav .active{background:var(--accent);color:white}main{padding:16px;max-width:760px;margin:auto}.card{background:white;border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:14px}.title{display:block;font-weight:700;margin-bottom:8px}input[type=date],input[type=text],textarea,select{width:100%;font-size:16px;padding:12px;border:1px solid var(--line);border-radius:12px;background:white}.item{padding:11px 0;border-bottom:1px solid var(--line)}.name{font-weight:600;margin-bottom:7px}.levels{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}.lvl{border:1px solid var(--line);background:white;border-radius:10px;padding:9px 2px;font-size:12px}.lvl.active{background:var(--accent);color:white}.grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.check{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:12px;padding:11px}.check input{width:20px;height:20px}.save,.secondary{width:100%;padding:13px;border-radius:13px;font-weight:700}.save{border:0;background:var(--accent);color:white;font-size:17px}.secondary{border:1px solid var(--line);background:white}.hidden{display:none}.calendar-head{display:flex;justify-content:space-between;align-items:center}.calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:12px}.dow,.day{text-align:center}.dow{font-size:12px;color:#777}.day{min-height:52px;border:1px solid var(--line);border-radius:12px;background:white;padding:6px}.empty{visibility:hidden}.dots{display:flex;justify-content:center;gap:3px;margin-top:6px}.dot{width:7px;height:7px;border-radius:50%;display:inline-block}.brown{background:#805b45}.blue{background:#2877c7}.red{background:#c63e3e}.legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:14px;font-size:12px}.legend span{display:flex;gap:5px;align-items:center}.status{text-align:center;color:#777;margin-top:8px;font-size:13px}.entry{padding:9px 0;border-bottom:1px solid var(--line)}
+</style></head><body><header><h1>Diario de Resfríos</h1><div class=sub>Síntomas, Amgevita, actividad y dolores</div><nav><button id=tR class=active>Hoy</button><button id=tC>Calendario</button><button id=tD>Datos</button></nav></header><main>
+<section id=R><div class=card><label class=title>Fecha</label><input id=fecha type=date></div><div class=card><label class=title>Síntomas de resfrío</label><div class=small>0 Nada · 1 Leve · 2 Moderado · 3 Fuerte</div><div id=sym></div></div><div class=card><label class=title>Intensidad general</label><select id=general><option value=0>0 — Sin síntomas</option><option value=1>1 — Muy leve</option><option value=2>2 — Leve</option><option value=3>3 — Moderado</option><option value=4>4 — Fuerte</option><option value=5>5 — Muy fuerte</option></select></div>
+<div class=card><label class=title>Dolores / lesiones</label><div class=small>Separados de los síntomas de resfrío.</div><div id=pain></div><input id=otroDolor type=text placeholder="Si marcaste Otro, escribe cuál"></div>
+<div class=card><label class=title>Actividad</label><div class=grid id=acts></div><input id=otroAct type=text placeholder="Otra actividad (opcional)" style="margin-top:9px"></div>
+<div class=card><label class=title>Circunstancias</label><div class=grid><label class=check><input id=frio type=checkbox>Frío / traje mojado</label><label class=check><input id=amgevita type=checkbox>Aplicación de Amgevita hoy</label></div></div>
+<div class=card><label class=title>Posible exposición</label><input id=expo type=text placeholder="Ej. reunión, mucha gente, viaje..."></div><div class=card><label class=title>Medicinas</label><input id=med type=text></div><div class=card><label class=title>Médico</label><input id=doc type=text></div><div class=card><label class=title>Observaciones</label><textarea id=obs></textarea></div><button id=save class=save>Guardar día</button><div id=status class=status></div></section>
+<section id=C class=hidden><div class=card><div class=calendar-head><button id=prev class=secondary style="width:auto">←</button><strong id=month></strong><button id=next class=secondary style="width:auto">→</button></div><div id=cal class=calendar><div class=dow>L</div><div class=dow>M</div><div class=dow>X</div><div class=dow>J</div><div class=dow>V</div><div class=dow>S</div><div class=dow>D</div></div><div class=legend><span><i class="dot brown"></i>Resfrío</span><span><i class="dot blue"></i>Amgevita</span><span><i class="dot red"></i>Dolor / lesión</span></div><p class=small>Un día puede mostrar los tres puntos. Toca un día para abrirlo.</p></div></section>
+<section id=D class=hidden><div class=card><label class=title>Exportar</label><button id=export class=secondary>Exportar CSV</button></div><div class=card><label class=title>Registros guardados</label><div id=list></div></div></section></main><script>
+const SYM=["Dolor de cuerpo", "Cansancio", "Sueño", "Dolor de cabeza", "Pesadez/congestión de cabeza", "Congestión nasal", "Dolor de oído", "Mucosidad", "Tos", "Picazón de pecho", "Dolor de garganta", "Crujido bronquial", "Sensación de frío", "Fiebre", "Molestias estomacales"],PAIN=["Cuádriceps", "Sacroilíaco", "Espalda", "Hombro", "Otro"],ACT=["Surf","Natación","Caminata","Entrenamiento","Fisioterapia","Descanso"],$=x=>document.getElementById(x);
+function scale(parent,n,kind){let w=document.createElement("div");w.className="item";w.innerHTML=`<div class=name>${n}</div><div class=levels data-kind="${kind}" data-name="${n}">${[0,1,2,3].map((v,i)=>`<button type=button class="lvl ${i?"":"active"}" data-v=${v}>${v} ${["Nada","Leve","Moderado","Fuerte"][v]}</button>`).join("")}</div>`;parent.appendChild(w)}
+SYM.forEach(x=>scale($("sym"),x,"s"));PAIN.forEach(x=>scale($("pain"),x,"p"));ACT.forEach((x,i)=>$("acts").insertAdjacentHTML("beforeend",`<label class=check><input id=a${i} type=checkbox>${x}</label>`));
+document.querySelectorAll(".levels").forEach(g=>g.onclick=e=>{if(!e.target.classList.contains("lvl"))return;g.querySelectorAll(".lvl").forEach(b=>b.classList.remove("active"));e.target.classList.add("active")});
+function today(){let d=new Date(),o=d.getTimezoneOffset();return new Date(d-o*60000).toISOString().slice(0,10)}$("fecha").value=today();
+function db(){try{return JSON.parse(localStorage.getItem("diarioResfrios")||"{}")}catch{return {}}}function store(x){localStorage.setItem("diarioResfrios",JSON.stringify(x))}
+function vals(k){let o={};document.querySelectorAll(`.levels[data-kind="${k}"]`).forEach(g=>o[g.dataset.name]=+g.querySelector(".active").dataset.v);return o}
+function setv(k,n,v){let g=[...document.querySelectorAll(`.levels[data-kind="${k}"]`)].find(x=>x.dataset.name===n);if(g)g.querySelectorAll(".lvl").forEach(b=>b.classList.toggle("active",+b.dataset.v===+(v||0)))}
+function form(){let s=vals("s"),p=vals("p");return {fecha:$("fecha").value,sintomas_niveles:s,sintomas:Object.keys(s).filter(k=>s[k]>0),intensidad:+$("general").value,dolores_niveles:p,dolor_otro:$("otroDolor").value.trim(),actividades:ACT.filter((x,i)=>$("a"+i).checked),actividad_otro:$("otroAct").value.trim(),frio:$("frio").checked,amgevita:$("amgevita").checked,exposicion:$("expo").value.trim(),medicinas:$("med").value.trim(),medico:$("doc").value.trim(),observaciones:$("obs").value.trim()}}
+function load(f){let r=db()[f];$("fecha").value=f;SYM.forEach(n=>{let v=r?.sintomas_niveles?.[n];if(v===undefined)v=(r?.sintomas||[]).includes(n)?1:0;setv("s",n,v)});let old=r?.sintomas_niveles||{};PAIN.forEach(n=>{let v=r?.dolores_niveles?.[n];if(v===undefined)v=n==="Espalda"?(old["Dolor de espalda"]||0):n==="Sacroilíaco"?(old["Dolor sacroilíaco"]||0):n==="Cuádriceps"?(old["Dolor de pierna"]||0):0;setv("p",n,v)});$("general").value=r?.intensidad??0;$("otroDolor").value=r?.dolor_otro||"";ACT.forEach((n,i)=>$("a"+i).checked=(r?.actividades||[]).includes(n)||(n==="Surf"&&!!r?.surf));$("otroAct").value=r?.actividad_otro||"";$("frio").checked=!!r?.frio;$("amgevita").checked=!!r?.amgevita;$("expo").value=r?.exposicion||"";$("med").value=r?.medicinas||"";$("doc").value=r?.medico||"";$("obs").value=r?.observaciones||""}
+$("fecha").onchange=e=>load(e.target.value);$("save").onclick=()=>{let r=form(),d=db();d[r.fecha]=r;store(d);$("status").textContent="Guardado ✓";setTimeout(()=>$("status").textContent="",1500);render()};
+function show(x){["R","C","D"].forEach(n=>$(n).classList.toggle("hidden",n!==x));[["tR","R"],["tC","C"],["tD","D"]].forEach(([b,n])=>$(b).classList.toggle("active",n===x));if(x==="C")render();if(x==="D")list()}
+$("tR").onclick=()=>show("R");$("tC").onclick=()=>show("C");$("tD").onclick=()=>show("D");
+function cold(r){return Object.entries(r?.sintomas_niveles||{}).some(([k,v])=>+v>0&&!["Dolor de espalda","Dolor sacroilíaco","Dolor de pierna"].includes(k))||(r?.sintomas||[]).some(k=>!["Dolor de espalda","Dolor sacroilíaco","Dolor de pierna"].includes(k))}
+function pain(r){return Object.values(r?.dolores_niveles||{}).some(v=>+v>0)||["Dolor de espalda","Dolor sacroilíaco","Dolor de pierna"].some(k=>+(r?.sintomas_niveles?.[k]||0)>0)}
+let cd=new Date();function render(){let y=cd.getFullYear(),m=cd.getMonth(),d=db();$("month").textContent=cd.toLocaleDateString("es-ES",{month:"long",year:"numeric"});let c=$("cal");[...c.querySelectorAll(".day")].forEach(e=>e.remove());let first=(new Date(y,m,1).getDay()+6)%7,days=new Date(y,m+1,0).getDate();for(let i=0;i<first;i++){let e=document.createElement("div");e.className="day empty";c.appendChild(e)}for(let n=1;n<=days;n++){let iso=`${y}-${String(m+1).padStart(2,"0")}-${String(n).padStart(2,"0")}`,r=d[iso],dots=r?`${cold(r)?'<i class="dot brown"></i>':""}${r.amgevita?'<i class="dot blue"></i>':""}${pain(r)?'<i class="dot red"></i>':""}`:"",e=document.createElement("button");e.className="day";e.innerHTML=`${n}<div class=dots>${dots}</div>`;e.onclick=()=>{load(iso);show("R")};c.appendChild(e)}}
+$("prev").onclick=()=>{cd=new Date(cd.getFullYear(),cd.getMonth()-1,1);render()};$("next").onclick=()=>{cd=new Date(cd.getFullYear(),cd.getMonth()+1,1);render()};
+function list(){let r=Object.values(db()).sort((a,b)=>b.fecha.localeCompare(a.fecha));$("list").innerHTML=r.length?r.map(x=>`<div class=entry><strong>${x.fecha}</strong><div class=small>${cold(x)?"Resfrío ":""}${x.amgevita?"· Amgevita ":""}${pain(x)?"· Dolor/lesión":""}</div></div>`).join(""):"Sin registros"}
+function esc(v){let s=Array.isArray(v)?v.join(" | "):String(v??"");return '"'+s.replaceAll('"','""')+'"'}$("export").onclick=()=>{let h=["fecha","intensidad_general",...SYM,...PAIN,"dolor_otro","actividades","actividad_otro","frio","amgevita","exposicion","medicinas","medico","observaciones"],rows=[h.map(esc).join(",")];Object.values(db()).sort((a,b)=>a.fecha.localeCompare(b.fecha)).forEach(r=>{let s=r.sintomas_niveles||{},p=r.dolores_niveles||{},v=[r.fecha,r.intensidad??0,...SYM.map(k=>s[k]??((r.sintomas||[]).includes(k)?1:0)),...PAIN.map(k=>p[k]??0),r.dolor_otro||"",r.actividades||[],r.actividad_otro||"",!!r.frio,!!r.amgevita,r.exposicion||"",r.medicinas||"",r.medico||"",r.observaciones||""];rows.push(v.map(esc).join(","))});let b=new Blob(["﻿"+rows.join("
+")],{type:"text/csv;charset=utf-8"}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="diario_resfrios_v2_1.csv";a.click()};load($("fecha").value);
+</script></body></html>
