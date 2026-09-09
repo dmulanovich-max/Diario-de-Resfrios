@@ -1,1 +1,1 @@
-V2.1.1: corrección de navegación y calendario. Conserva los registros locales y los campos anteriores. No borres ni reinstales la aplicación. Exporta una copia de seguridad antes de actualizar.
+V2.2: añade punto verde para actividad física y punto amarillo para descanso. Descanso queda separado de Actividad y se añade 'Descanso por resfrío o dolor'. Los registros antiguos con 'Descanso' se interpretan automáticamente como descanso.
