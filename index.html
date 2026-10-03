@@ -20,7 +20,7 @@
 <div class="card soft amg-card"><div class=section-title>Amgevita</div><div class=section-body><label class=check><input id=amgevita type=checkbox>Aplicación de Amgevita hoy</label></div></div><div class=card><label class=title>Circunstancias</label><div class=grid><label class=check><input id=frio type=checkbox>Frío / traje mojado</label></div></div>
 <div class=card><label class=title>Posible exposición</label><input id=expo type=text placeholder="Ej. reunión, mucha gente, viaje..."></div><div class=card><label class=title>Medicinas</label><textarea id=med rows=4 style="min-height:110px;resize:vertical"></textarea></div><div class=card><label class=title>Médico</label><input id=doc type=text></div><div class=card><label class=title>Observaciones</label><textarea id=obs></textarea></div><button id=save class=save>Guardar día</button><div id=status class=status></div></section>
 <section id=C class=hidden><div class=card><div class=calendar-head><button id=prev class=secondary style="width:auto">←</button><strong id=month></strong><button id=next class=secondary style="width:auto">→</button></div><div id=cal class=calendar><div class=dow>L</div><div class=dow>M</div><div class=dow>X</div><div class=dow>J</div><div class=dow>V</div><div class=dow>S</div><div class=dow>D</div></div><div style="font-weight:700;margin-top:10px">Filtrar:</div><div class=legend id=calLegend><span data-filter=declared><i class="dot coldbig"></i>Resfrío</span><span data-filter=symptoms><i class="dot brown"></i>Síntomas</span><span data-filter=pain><i class="dot orange"></i>Lesión</span><span data-filter=activity><i class="dot lightblue"></i>Actividad</span><span data-filter=rest><i class="dot yellow"></i>Descanso</span><span data-filter=amgevita><i class="dot amggreen"></i>Amgevita</span></div><p class=small>Toca un día para abrirlo.</p></div></section>
-<section id=D class=hidden><div class=card><label class=title>Copia de seguridad</label><div class=small style="margin-bottom:10px">Guarda una copia completa del diario. En iPhone se abrirá Compartir: elige “Guardar en Archivos” y luego iCloud Drive.</div><button id=backup class=save type=button>Guardar copia de seguridad</button><button id=restoreBtn type=button style="margin-top:10px;width:100%;padding:12px;border:1px solid #e94b35;border-radius:12px;background:white;color:#b83b29;font-weight:700">Restaurar copia</button><input id=restoreFile type=file accept=".json,application/json" style="display:none"></div><div class=card><label class=title>Exportar</label><button id=export class=secondary>Exportar CSV</button></div><div class=card><label class=title>Registros guardados</label><div id=list></div></div></section></main><script>
+<section id=D class=hidden><div class=card><label class=title>Copia de seguridad</label><div class=small style="margin-bottom:10px">Guarda una copia completa del diario. En iPhone se abrirá Compartir o el archivo de respaldo; usa Compartir → Guardar en Archivos → iCloud Drive.</div><button id=backup class=save type=button>Guardar copia de seguridad</button><button id=restoreBtn type=button style="margin-top:10px;width:100%;padding:12px;border:1px solid #e94b35;border-radius:12px;background:white;color:#b83b29;font-weight:700">Restaurar copia</button><input id=restoreFile type=file accept=".json,application/json" style="display:none"></div><div class=card><label class=title>Exportar</label><button id=export class=secondary>Exportar CSV</button></div><div class=card><label class=title>Registros guardados</label><div id=list></div></div></section></main><script>
 const SYM=["Dolor de cuerpo", "Cansancio", "Sueño", "Dolor de cabeza", "Pesadez/congestión de cabeza", "Congestión nasal", "Dolor de oído", "Mucosidad", "Tos", "Picazón de pecho", "Dolor de garganta", "Crujido bronquial", "Sensación de frío", "Fiebre", "Molestias estomacales"],PAIN=["Cuádriceps", "Sacroilíaco", "Espalda", "Hombro", "Otro"],ACT=["Surf","Natación","Caminata","Entrenamiento","Fisioterapia"],$=x=>document.getElementById(x);
 function scale(parent,n,kind){let w=document.createElement("div");w.className="item";w.innerHTML=`<div class=name>${n}</div><div class=levels data-kind="${kind}" data-name="${n}">${[0,1,2,3].map((v,i)=>`<button type=button class="lvl ${i?"":"active"}" data-v=${v}>${v} ${["Nada","Leve","Moderado","Fuerte"][v]}</button>`).join("")}</div>`;parent.appendChild(w)}
 SYM.forEach(x=>scale($("sym"),x,"s"));PAIN.forEach(x=>scale($("pain"),x,"p"));ACT.forEach((x,i)=>$("acts").insertAdjacentHTML("beforeend",`<label class=check><input id=a${i} type=checkbox>${x}</label>`));
@@ -50,25 +50,33 @@ let cd=new Date();function render(){let y=cd.getFullYear(),m=cd.getMonth(),d=db(
 $("prev").onclick=()=>{cd=new Date(cd.getFullYear(),cd.getMonth()-1,1);render()};$("next").onclick=()=>{cd=new Date(cd.getFullYear(),cd.getMonth()+1,1);render()};
 function list(){let r=Object.values(db()).sort((a,b)=>b.fecha.localeCompare(a.fecha));$("list").innerHTML=r.length?r.map(x=>`<div class=entry><strong>${x.fecha}</strong><div class=small>${declared(x)?"Resfrío declarado ":""}${symptoms(x)?"· Síntomas ":""}${pain(x)?"· Dolor/lesión ":""}${activity(x)?"· Actividad ":""}${rest(x)?"· Descanso ":""}${x.amgevita?"· Amgevita":""}</div></div>`).join(""):"Sin registros"}
 function esc(v){let s=Array.isArray(v)?v.join(" | "):String(v??"");return '"'+s.replaceAll('"','""')+'"'}$("backup").onclick=async()=>{
- let payload={app:"Diario de Resfríos",version:1,created_at:new Date().toISOString(),storage_key:KEY,records:db()};
- let text=JSON.stringify(payload,null,2);
- let name="respaldo_diario_resfrios_"+new Date().toISOString().slice(0,10)+".json";
- let blob=new Blob([text],{type:"application/json"});
- let file;
- try{file=new File([blob],name,{type:"application/json"})}catch(e){file=null}
- try{
-   if(file&&navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
-     await navigator.share({files:[file],title:"Copia de seguridad — Diario de Resfríos"});
-     return;
-   }
- }catch(err){
-   if(err&&err.name==="AbortError")return;
- }
- let a=document.createElement("a"),url=URL.createObjectURL(blob);
- a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();
- setTimeout(()=>URL.revokeObjectURL(url),1500);
-};
-$("restoreBtn").onclick=()=>$("restoreFile").click();
+  const payload={app:"Diario de Resfríos",version:1,created_at:new Date().toISOString(),storage_key:KEY,records:db()};
+  const text=JSON.stringify(payload,null,2);
+  const name="respaldo_diario_resfrios_"+new Date().toISOString().slice(0,10)+".json";
+  const blob=new Blob([text],{type:"application/json"});
+  let file=null;
+  try{file=new File([blob],name,{type:"application/json"})}catch(e){}
+  if(file && navigator.share){
+    try{
+      if(!navigator.canShare || navigator.canShare({files:[file]})){
+        await navigator.share({files:[file],title:name});
+        return;
+      }
+    }catch(e){
+      if(e && e.name==="AbortError") return;
+    }
+  }
+  // Safari fallback: open the backup itself as a document.
+  // The user can then use Safari's Share menu -> Save to Files.
+  const url=URL.createObjectURL(blob);
+  const w=window.open(url,"_blank");
+  if(!w){
+    const a=document.createElement("a");
+    a.href=url;a.download=name;a.target="_blank";
+    document.body.appendChild(a);a.click();a.remove();
+  }
+  setTimeout(()=>URL.revokeObjectURL(url),60000);
+};$("restoreBtn").onclick=()=>$("restoreFile").click();
 $("restoreFile").onchange=async(e)=>{
  let file=e.target.files&&e.target.files[0];if(!file)return;
  try{
