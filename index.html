@@ -4,7 +4,16 @@
 .act-card .check{background:#eaf6fc;border-color:#acd8ee}.act-card .check input{accent-color:#67bde5}
 .rest-card .check{background:#fff9df;border-color:#eadb8c}.rest-card .check input{accent-color:#dfc34b}
 .amg-card .check{background:#eaf7ee;border-color:#a8d5b4}.amg-card .check input{accent-color:#6bc182}.dot.coldbig{width:10px;height:10px;background:#e94b35}.orange{background:var(--pain)}.lightblue{background:var(--act)}.amggreen{background:#2cab55}
-</style></head><body><header><h1>Diario de Resfríos</h1><div class=sub>Resfríos, síntomas, Amgevita, actividad y dolores</div><nav><button id=tR class=active>Hoy</button><button id=tC>Calendario</button><button id=tD>Datos</button></nav></header><main>
+</style>
+<style>
+#calLegend{display:grid!important;grid-template-columns:1fr 1fr!important;gap:8px!important;margin:10px 0!important}
+#calLegend [data-filter]{display:flex!important;align-items:center!important;gap:8px!important;min-height:44px!important;padding:8px 12px!important;border:1px solid #d8d3cf!important;border-radius:12px!important;background:#fff!important;font-weight:600!important;cursor:pointer!important;user-select:none!important;-webkit-tap-highlight-color:transparent!important;touch-action:manipulation!important}
+#calLegend [data-filter].off{background:#e1e1e1!important;border-color:#b9b9b9!important;color:#858585!important}
+#calLegend [data-filter].off .dot{background:#9e9e9e!important;opacity:1!important;filter:none!important}
+#calLegend .offtag{margin-left:auto;font-size:10px;font-weight:600;color:#777}
+@media(max-width:360px){#calLegend{grid-template-columns:1fr!important}}
+</style>
+</head><body><header><h1>Diario de Resfríos</h1><div class=sub>Resfríos, síntomas, Amgevita, actividad y dolores</div><nav><button id=tR class=active>Hoy</button><button id=tC>Calendario</button><button id=tD>Datos</button></nav></header><main>
 <section id=R><div class=card><label class=title>Fecha</label><input id=fecha type=date></div><div class="card soft cold-card"><div class=section-title>Resfrío declarado</div><div class=section-body><label class=cold-check><input id=resfrio_declarado type=checkbox>Resfrío declarado</label></div></div><div class="card soft sym-card"><div class=section-title>Síntomas</div><div class=section-body><div class=small>0 Nada · 1 Leve · 2 Moderado · 3 Fuerte</div><div id=sym></div></div></div><div class=card><label class=title>Intensidad general</label><select id=general><option value=0>0 — Sin síntomas</option><option value=1>1 — Muy leve</option><option value=2>2 — Leve</option><option value=3>3 — Moderado</option><option value=4>4 — Fuerte</option><option value=5>5 — Muy fuerte</option></select></div>
 <div class="card soft pain-card"><div class=section-title>Dolores / lesiones</div><div class=section-body><div id=pain></div><input id=otroDolor type=text placeholder="Si marcaste Otro, escribe cuál"></div></div>
 <div class="card soft act-card"><div class=section-title>Actividad</div><div class=section-body><div class=grid id=acts></div><input id=otroAct type=text placeholder="Otra actividad (opcional)" style="margin-top:9px"></div></div><div class="card soft rest-card"><div class=section-title>Descanso</div><div class=section-body><div class=grid><label class=check><input id=descanso type=checkbox>Día de descanso</label><label class=check><input id=siesta type=checkbox>Siesta</label><label class=check><input id=descanso_malestar type=checkbox>Descanso por resfrío o dolor</label></div></div></div>
@@ -29,7 +38,13 @@ function symptoms(r){return Object.entries(r?.sintomas_niveles||{}).some(([k,v])
 function pain(r){return Object.values(r?.dolores_niveles||{}).some(v=>+v>0)||["Dolor de espalda","Dolor sacroilíaco","Dolor de pierna"].some(k=>+(r?.sintomas_niveles?.[k]||0)>0)}function activity(r){return (r?.actividades||[]).some(x=>x!=="Descanso")||!!(r?.actividad_otro||"").trim()}function rest(r){return !!r?.descanso||!!r?.siesta||!!r?.descanso_malestar||(r?.actividades||[]).includes("Descanso")}
 const calFilters={declared:true,symptoms:true,pain:true,activity:true,rest:true,amgevita:true};
 function filterOn(k){return calFilters[k]!==false}
-function paintFilters(){document.querySelectorAll("#calLegend [data-filter]").forEach(function(el){el.classList.toggle("off",!filterOn(el.dataset.filter))})}
+function paintFilters(){document.querySelectorAll("#calLegend [data-filter]").forEach(function(el){
+  var off=!filterOn(el.dataset.filter);
+  el.classList.toggle("off",off);
+  var tag=el.querySelector(".offtag");
+  if(off&&!tag){tag=document.createElement("small");tag.className="offtag";tag.textContent="apagado";el.appendChild(tag)}
+  if(!off&&tag)tag.remove();
+})}
 function toggleFilter(k){calFilters[k]=!filterOn(k);paintFilters();render()}
 let cd=new Date();function render(){let y=cd.getFullYear(),m=cd.getMonth(),d=db();$("month").textContent=cd.toLocaleDateString("es-ES",{month:"long",year:"numeric"});let c=$("cal");[...c.querySelectorAll(".day")].forEach(e=>e.remove());let first=(new Date(y,m,1).getDay()+6)%7,days=new Date(y,m+1,0).getDate();for(let i=0;i<first;i++){let e=document.createElement("div");e.className="day empty";c.appendChild(e)}for(let n=1;n<=days;n++){let iso=`${y}-${String(m+1).padStart(2,"0")}-${String(n).padStart(2,"0")}`,r=d[iso],dots=r?`${filterOn("declared")&&declared(r)?'<i class="dot coldbig"></i>':""}${filterOn("symptoms")&&symptoms(r)?'<i class="dot brown"></i>':""}${filterOn("pain")&&pain(r)?'<i class="dot orange"></i>':""}${filterOn("activity")&&activity(r)?'<i class="dot lightblue"></i>':""}${filterOn("rest")&&rest(r)?'<i class="dot yellow"></i>':""}${filterOn("amgevita")&&r.amgevita?'<i class="dot amggreen"></i>':""}`:"",e=document.createElement("button");e.className="day";e.innerHTML=`${n}<div class=dots>${dots}</div>`;e.onclick=()=>{load(iso);show("R")};c.appendChild(e)}}
 $("prev").onclick=()=>{cd=new Date(cd.getFullYear(),cd.getMonth()-1,1);render()};$("next").onclick=()=>{cd=new Date(cd.getFullYear(),cd.getMonth()+1,1);render()};
