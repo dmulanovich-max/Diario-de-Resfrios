@@ -24,13 +24,26 @@ function form(){let s=vals("s"),p=vals("p");return {fecha:$("fecha").value,resfr
 function load(f){let r=db()[f];$("fecha").value=f;$("resfrio_declarado").checked=!!r?.resfrio_declarado;SYM.forEach(n=>{let v=r?.sintomas_niveles?.[n];if(v===undefined)v=(r?.sintomas||[]).includes(n)?1:0;setv("s",n,v)});let old=r?.sintomas_niveles||{};PAIN.forEach(n=>{let v=r?.dolores_niveles?.[n];if(v===undefined)v=n==="Espalda"?(old["Dolor de espalda"]||0):n==="Sacroilíaco"?(old["Dolor sacroilíaco"]||0):n==="Cuádriceps"?(old["Dolor de pierna"]||0):0;setv("p",n,v)});$("general").value=r?.intensidad??0;$("otroDolor").value=r?.dolor_otro||"";ACT.forEach((n,i)=>$("a"+i).checked=(r?.actividades||[]).includes(n)||(n==="Surf"&&!!r?.surf));$("otroAct").value=r?.actividad_otro||"";$("descanso").checked=!!r?.descanso||(r?.actividades||[]).includes("Descanso");$("siesta").checked=!!r?.siesta;$("descanso_malestar").checked=!!r?.descanso_malestar;$("frio").checked=!!r?.frio;$("amgevita").checked=!!r?.amgevita;$("expo").value=r?.exposicion||"";$("med").value=r?.medicinas||"";$("doc").value=r?.medico||"";$("obs").value=r?.observaciones||""}
 $("fecha").onchange=e=>load(e.target.value);$("save").onclick=()=>{let r=form(),d=db();d[r.fecha]=r;store(d);$("status").textContent="Guardado ✓";setTimeout(()=>$("status").textContent="",1500);render()};
 function show(x){["R","C","D"].forEach(n=>$(n).classList.toggle("hidden",n!==x));[["tR","R"],["tC","C"],["tD","D"]].forEach(([b,n])=>$(b).classList.toggle("active",n===x));if(x==="C")render();if(x==="D")list()}
-$("tR").onclick=()=>show("R");$("tC").onclick=()=>show("C");$("tD").onclick=()=>show("D");
+$("tR").onclick=()=>show("R");$("tC").onclick=()=>show("C");$("tD").onclick=()=>show("D");initCalendarFilters();
 function symptoms(r){return Object.entries(r?.sintomas_niveles||{}).some(([k,v])=>+v>0&&!["Dolor de espalda","Dolor sacroilíaco","Dolor de pierna"].includes(k))||(r?.sintomas||[]).some(k=>!["Dolor de espalda","Dolor sacroilíaco","Dolor de pierna"].includes(k))}function declared(r){return !!r?.resfrio_declarado}
 function pain(r){return Object.values(r?.dolores_niveles||{}).some(v=>+v>0)||["Dolor de espalda","Dolor sacroilíaco","Dolor de pierna"].some(k=>+(r?.sintomas_niveles?.[k]||0)>0)}function activity(r){return (r?.actividades||[]).some(x=>x!=="Descanso")||!!(r?.actividad_otro||"").trim()}function rest(r){return !!r?.descanso||!!r?.siesta||!!r?.descanso_malestar||(r?.actividades||[]).includes("Descanso")}
 const calFilters={declared:true,symptoms:true,pain:true,activity:true,rest:true,amgevita:true};
 function filterOn(k){return calFilters[k]!==false}
-function syncLegend(){document.querySelectorAll("#calLegend [data-filter]").forEach(el=>el.classList.toggle("off",!filterOn(el.dataset.filter)))}
-document.addEventListener("click",e=>{let el=e.target.closest("#calLegend [data-filter]");if(!el)return;let k=el.dataset.filter;calFilters[k]=!filterOn(k);syncLegend();render()});
+function syncLegend(){document.querySelectorAll("#calLegend [data-filter]").forEach(function(el){el.classList.toggle("off",!filterOn(el.getAttribute("data-filter")))})}
+function initCalendarFilters(){
+  document.querySelectorAll("#calLegend [data-filter]").forEach(function(el){
+    el.onclick=function(ev){
+      ev.preventDefault();
+      ev.stopPropagation();
+      var k=el.getAttribute("data-filter");
+      calFilters[k]=!filterOn(k);
+      syncLegend();
+      render();
+      return false;
+    };
+  });
+  syncLegend();
+}
 let cd=new Date();function render(){let y=cd.getFullYear(),m=cd.getMonth(),d=db();$("month").textContent=cd.toLocaleDateString("es-ES",{month:"long",year:"numeric"});let c=$("cal");[...c.querySelectorAll(".day")].forEach(e=>e.remove());let first=(new Date(y,m,1).getDay()+6)%7,days=new Date(y,m+1,0).getDate();for(let i=0;i<first;i++){let e=document.createElement("div");e.className="day empty";c.appendChild(e)}for(let n=1;n<=days;n++){let iso=`${y}-${String(m+1).padStart(2,"0")}-${String(n).padStart(2,"0")}`,r=d[iso],dots=r?`${filterOn("declared")&&declared(r)?'<i class="dot coldbig"></i>':""}${filterOn("symptoms")&&symptoms(r)?'<i class="dot brown"></i>':""}${filterOn("pain")&&pain(r)?'<i class="dot orange"></i>':""}${filterOn("activity")&&activity(r)?'<i class="dot lightblue"></i>':""}${filterOn("rest")&&rest(r)?'<i class="dot yellow"></i>':""}${filterOn("amgevita")&&r.amgevita?'<i class="dot amggreen"></i>':""}`:"",e=document.createElement("button");e.className="day";e.innerHTML=`${n}<div class=dots>${dots}</div>`;e.onclick=()=>{load(iso);show("R")};c.appendChild(e)}}
 $("prev").onclick=()=>{cd=new Date(cd.getFullYear(),cd.getMonth()-1,1);render()};$("next").onclick=()=>{cd=new Date(cd.getFullYear(),cd.getMonth()+1,1);render()};
 function list(){let r=Object.values(db()).sort((a,b)=>b.fecha.localeCompare(a.fecha));$("list").innerHTML=r.length?r.map(x=>`<div class=entry><strong>${x.fecha}</strong><div class=small>${declared(x)?"Resfrío declarado ":""}${symptoms(x)?"· Síntomas ":""}${pain(x)?"· Dolor/lesión ":""}${activity(x)?"· Actividad ":""}${rest(x)?"· Descanso ":""}${x.amgevita?"· Amgevita":""}</div></div>`).join(""):"Sin registros"}
