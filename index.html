@@ -100,6 +100,17 @@ paintFilters();
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
 
+  import {
+    getAuth,
+    GoogleAuthProvider,
+    signInWithPopup,
+    onAuthStateChanged
+  } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+
+  import {
+    getFirestore
+  } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+
   const firebaseConfig = {
     apiKey: "AIzaSyBTWXjI05AQqFw_P2iBloZQLIpCcKledLE",
     authDomain: "programas-denise.firebaseapp.com",
@@ -110,7 +121,24 @@ paintFilters();
   };
 
   const firebaseApp = initializeApp(firebaseConfig);
-  console.log("Firebase conectado correctamente");
+  const auth = getAuth(firebaseApp);
+  const firestore = getFirestore(firebaseApp);
+  const provider = new GoogleAuthProvider();
+
+  window.firebaseAuth = auth;
+  window.firebaseFirestore = firestore;
+  window.firebaseGoogleProvider = provider;
+  window.firebaseSignIn = () => signInWithPopup(auth, provider);
+
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      console.log("Firebase: usuario conectado", user.email);
+    } else {
+      console.log("Firebase: usuario no conectado");
+    }
+  });
+
+  console.log("Firebase, Google y Firestore preparados correctamente");
 </script>
 </body>
 </html>
