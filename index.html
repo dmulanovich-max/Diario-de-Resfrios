@@ -13,7 +13,7 @@
 #calLegend .offtag{margin-left:auto;font-size:10px;font-weight:600;color:#777}
 @media(max-width:360px){#calLegend{grid-template-columns:1fr!important}}
 </style>
-</head><body><header><h1>Diario de Resfríos</h1><div class=sub>Resfríos, síntomas, Amgevita, actividad y dolores</div><nav><button id=tR class=active>Hoy</button><button id=tC>Calendario</button><button id=tD>Datos</button></nav></header><main>
+</head><body><header><h1>Diario de Resfríos</h1><button id="googleLogin" type="button">Entrar con Google</button><span id="googleUser" style="margin-left:8px;font-size:12px"></span><div class=sub>Resfríos, síntomas, Amgevita, actividad y dolores</div><nav><button id=tR class=active>Hoy</button><button id=tC>Calendario</button><button id=tD>Datos</button></nav></header><main>
 <section id=R><div class=card><label class=title>Fecha</label><input id=fecha type=date></div><div class="card soft cold-card"><div class=section-title>Resfrío declarado</div><div class=section-body><label class=cold-check><input id=resfrio_declarado type=checkbox>Resfrío declarado</label></div></div><div class="card soft sym-card"><div class=section-title>Síntomas</div><div class=section-body><div class=small>0 Nada · 1 Leve · 2 Moderado · 3 Fuerte</div><div id=sym></div></div></div><div class=card><label class=title>Intensidad general</label><select id=general><option value=0>0 — Sin síntomas</option><option value=1>1 — Muy leve</option><option value=2>2 — Leve</option><option value=3>3 — Moderado</option><option value=4>4 — Fuerte</option><option value=5>5 — Muy fuerte</option></select></div>
 <div class="card soft pain-card"><div class=section-title>Dolores / lesiones</div><div class=section-body><div id=pain></div><input id=otroDolor type=text placeholder="Si marcaste Otro, escribe cuál"></div></div>
 <div class="card soft act-card"><div class=section-title>Actividad</div><div class=section-body><div class=grid id=acts></div><input id=otroAct type=text placeholder="Otra actividad (opcional)" style="margin-top:9px"></div></div><div class="card soft rest-card"><div class=section-title>Descanso</div><div class=section-body><div class=grid><label class=check><input id=descanso type=checkbox>Día de descanso</label><label class=check><input id=siesta type=checkbox>Siesta</label><label class=check><input id=descanso_malestar type=checkbox>Descanso por resfrío o dolor</label></div></div></div>
@@ -130,13 +130,31 @@ paintFilters();
   window.firebaseGoogleProvider = provider;
   window.firebaseSignIn = () => signInWithPopup(auth, provider);
 
-  onAuthStateChanged(auth, (user) => {
-    if (user) {
-      console.log("Firebase: usuario conectado", user.email);
-    } else {
-      console.log("Firebase: usuario no conectado");
+  const loginBtn = document.getElementById("googleLogin");
+  const userLabel = document.getElementById("googleUser");
+
+  loginBtn.addEventListener("click", async () => {
+    try {
+      await signInWithPopup(auth, provider);
+    } catch (error) {
+      console.error("Error al entrar con Google:", error);
+      alert("No se pudo iniciar sesión con Google.");
     }
   });
+  
+ onAuthStateChanged(auth, (user) => {
+  if (user) {
+    console.log("Firebase: usuario conectado", user.email);
+    userLabel.textContent = user.email;
+    loginBtn.textContent = "Conectado";
+    loginBtn.disabled = true;
+  } else {
+    console.log("Firebase: usuario no conectado");
+    userLabel.textContent = "";
+    loginBtn.textContent = "Entrar con Google";
+    loginBtn.disabled = false;
+  }
+});
 
   console.log("Firebase, Google y Firestore preparados correctamente");
 </script>
