@@ -96,4 +96,21 @@ document.querySelectorAll("#calLegend [data-filter]").forEach(function(el){
   });
 });
 paintFilters();
-</script></body></html>
+</script> 
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBTWXjI05AQqFw_P2iBloZQLIpCcKledLE",
+    authDomain: "programas-denise.firebaseapp.com",
+    projectId: "programas-denise",
+    storageBucket: "programas-denise.firebasestorage.app",
+    messagingSenderId: "77366761636",
+    appId: "1:77366761636:web:dc1df7a85f7b87f7f1ee31"
+  };
+
+  const firebaseApp = initializeApp(firebaseConfig);
+  console.log("Firebase conectado correctamente");
+</script>
+</body>
+</html>
