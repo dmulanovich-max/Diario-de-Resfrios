@@ -31,7 +31,18 @@ function vals(k){let o={};document.querySelectorAll(`.levels[data-kind="${k}"]`)
 function setv(k,n,v){let g=[...document.querySelectorAll(`.levels[data-kind="${k}"]`)].find(x=>x.dataset.name===n);if(g)g.querySelectorAll(".lvl").forEach(b=>b.classList.toggle("active",+b.dataset.v===+(v||0)))}
 function form(){let s=vals("s"),p=vals("p");return {fecha:$("fecha").value,resfrio_declarado:$("resfrio_declarado").checked,sintomas_niveles:s,sintomas:Object.keys(s).filter(k=>s[k]>0),intensidad:+$("general").value,dolores_niveles:p,dolor_otro:$("otroDolor").value.trim(),actividades:ACT.filter((x,i)=>$("a"+i).checked),actividad_otro:$("otroAct").value.trim(),descanso:$("descanso").checked,siesta:$("siesta").checked,descanso_malestar:$("descanso_malestar").checked,frio:$("frio").checked,amgevita:$("amgevita").checked,exposicion:$("expo").value.trim(),medicinas:$("med").value.trim(),medico:$("doc").value.trim(),observaciones:$("obs").value.trim()}}
 function load(f){let r=db()[f];$("fecha").value=f;$("resfrio_declarado").checked=!!r?.resfrio_declarado;SYM.forEach(n=>{let v=r?.sintomas_niveles?.[n];if(v===undefined)v=(r?.sintomas||[]).includes(n)?1:0;setv("s",n,v)});let old=r?.sintomas_niveles||{};PAIN.forEach(n=>{let v=r?.dolores_niveles?.[n];if(v===undefined)v=n==="Espalda"?(old["Dolor de espalda"]||0):n==="Sacroilíaco"?(old["Dolor sacroilíaco"]||0):n==="Cuádriceps"?(old["Dolor de pierna"]||0):0;setv("p",n,v)});$("general").value=r?.intensidad??0;$("otroDolor").value=r?.dolor_otro||"";ACT.forEach((n,i)=>$("a"+i).checked=(r?.actividades||[]).includes(n)||(n==="Surf"&&!!r?.surf));$("otroAct").value=r?.actividad_otro||"";$("descanso").checked=!!r?.descanso||(r?.actividades||[]).includes("Descanso");$("siesta").checked=!!r?.siesta;$("descanso_malestar").checked=!!r?.descanso_malestar;$("frio").checked=!!r?.frio;$("amgevita").checked=!!r?.amgevita;$("expo").value=r?.exposicion||"";$("med").value=r?.medicinas||"";$("doc").value=r?.medico||"";$("obs").value=r?.observaciones||""}
-$("fecha").onchange=e=>load(e.target.value);$("save").onclick=()=>{let r=form(),d=db();d[r.fecha]=r;store(d);$("status").textContent="Guardado ✓";setTimeout(()=>$("status").textContent="",1500);render()};
+$("fecha").onchange=e=>load(e.target.value);
+$("save").onclick=async()=>{
+  let r=form(),d=db();
+  d[r.fecha]=r;
+  store(d);
+
+  await window.guardarEnFirestore(r.fecha,r);
+
+  $("status").textContent="Guardado ✓";
+  setTimeout(()=>$("status").textContent="",1500);
+  render();
+};
 function show(x){["R","C","D"].forEach(n=>$(n).classList.toggle("hidden",n!==x));[["tR","R"],["tC","C"],["tD","D"]].forEach(([b,n])=>$(b).classList.toggle("active",n===x));if(x==="C")render();if(x==="D")list()}
 $("tR").onclick=()=>show("R");$("tC").onclick=()=>show("C");$("tD").onclick=()=>show("D");
 function symptoms(r){return Object.entries(r?.sintomas_niveles||{}).some(([k,v])=>+v>0&&!["Dolor de espalda","Dolor sacroilíaco","Dolor de pierna"].includes(k))||(r?.sintomas||[]).some(k=>!["Dolor de espalda","Dolor sacroilíaco","Dolor de pierna"].includes(k))}function declared(r){return !!r?.resfrio_declarado}
@@ -108,7 +119,10 @@ paintFilters();
   } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
 
   import {
-    getFirestore
+    getFirestore,
+    doc,
+    setDoc,
+    getDoc
   } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -130,6 +144,23 @@ paintFilters();
   window.firebaseGoogleProvider = provider;
   window.firebaseSignIn = () => signInWithPopup(auth, provider);
 
+  async function guardarEnFirestore(fecha, datos) {
+  const user = auth.currentUser;
+  if (!user) return;
+
+  try {
+    await setDoc(
+      doc(firestore, "usuarios", user.uid, "registros", fecha),
+      datos
+    );
+    console.log("Firestore: guardado", fecha);
+  } catch (error) {
+    console.error("Error guardando en Firestore:", error);
+  }
+}
+
+  window.guardarEnFirestore = guardarEnFirestore;
+  
   const loginBtn = document.getElementById("googleLogin");
   const userLabel = document.getElementById("googleUser");
 
