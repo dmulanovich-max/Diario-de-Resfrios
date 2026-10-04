@@ -119,11 +119,13 @@ paintFilters();
   } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
 
   import {
-    getFirestore,
-    doc,
-    setDoc,
-    getDoc
-  } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+      getFirestore,
+      doc,
+      setDoc,
+      getDoc,
+      getDocs,
+      collection
+    } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyBTWXjI05AQqFw_P2iBloZQLIpCcKledLE",
@@ -182,6 +184,37 @@ paintFilters();
 }
 
 window.subirRegistrosLocales = subirRegistrosLocales;
+  async function cargarRegistrosDesdeFirestore() {
+  const user = auth.currentUser;
+  if (!user) return;
+
+  try {
+    const snap = await getDocs(
+      collection(firestore, "usuarios", user.uid, "registros")
+    );
+
+    const locales = db();
+
+    snap.forEach((documento) => {
+      const datos = documento.data();
+      const fecha = documento.id;
+
+      if (!locales[fecha]) {
+        locales[fecha] = datos;
+      }
+    });
+
+    store(locales);
+    load(document.getElementById("fecha").value);
+    render();
+
+    console.log("Firestore: registros cargados");
+  } catch (error) {
+    console.error("Error cargando Firestore:", error);
+  }
+}
+
+window.cargarRegistrosDesdeFirestore = cargarRegistrosDesdeFirestore;
   const syncBtn = document.getElementById("syncCloud");
 
 syncBtn.addEventListener("click", async () => {
@@ -205,12 +238,13 @@ syncBtn.addEventListener("click", async () => {
     }
   });
   
- onAuthStateChanged(auth, (user) => {
+ onAuthStateChanged(auth, async (user) => {
   if (user) {
     console.log("Firebase: usuario conectado", user.email);
     userLabel.textContent = user.email;
     loginBtn.textContent = "Conectado";
     loginBtn.disabled = true;
+    await cargarRegistrosDesdeFirestore();
   } else {
     console.log("Firebase: usuario no conectado");
     userLabel.textContent = "";
