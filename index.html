@@ -161,6 +161,27 @@ paintFilters();
 
   window.guardarEnFirestore = guardarEnFirestore;
   
+  async function subirRegistrosLocales() {
+  const user = auth.currentUser;
+  if (!user) return;
+
+  const registros = db();
+
+  for (const [fecha, datos] of Object.entries(registros)) {
+    try {
+      await setDoc(
+        doc(firestore, "usuarios", user.uid, "registros", fecha),
+        datos,
+        { merge: true }
+      );
+      console.log("Subido a Firestore:", fecha);
+    } catch (error) {
+      console.error("Error subiendo", fecha, error);
+    }
+  }
+}
+
+window.subirRegistrosLocales = subirRegistrosLocales;
   const loginBtn = document.getElementById("googleLogin");
   const userLabel = document.getElementById("googleUser");
 
