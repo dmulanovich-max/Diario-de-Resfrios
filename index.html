@@ -152,7 +152,19 @@ paintFilters();
   const conflictos=new Set();
   let dejarDeEscuchar=null;
   let ultimoUsuario=null;
-  const normalizar=(r)=>JSON.stringify(Object.fromEntries(Object.entries(r||{}).filter(([k])=>k!=="actualizado_en").sort(([a],[b])=>a.localeCompare(b))));
+  // Comparar el contenido real del formulario, no metadatos ni campos
+  // heredados que algunas versiones antiguas guardaban de otra forma.
+  const normalizar=(r)=>{
+    if(!r)return "null";
+    const campos=["fecha","resfrio_declarado","intensidad","dolor_otro","actividad_otro","descanso","siesta","descanso_malestar","frio","amgevita","exposicion","medicinas","medico","observaciones"];
+    const bools=new Set(["resfrio_declarado","descanso","siesta","descanso_malestar","frio","amgevita"]);
+    const o={};
+    for(const k of campos)o[k]=bools.has(k)?!!r[k]:(k==="intensidad"?Number(r[k]||0):String(r[k]||""));
+    o.sintomas_niveles=Object.fromEntries(SYM.map(k=>[k,Number(r.sintomas_niveles?.[k]??((r.sintomas||[]).includes(k)?1:0))]));
+    o.dolores_niveles=Object.fromEntries(PAIN.map(k=>[k,Number(r.dolores_niveles?.[k]||0)]));
+    o.actividades=[...(r.actividades||[])].filter(x=>x!=="Descanso").sort();
+    return JSON.stringify(o);
+  };
   const fechaMod=(r)=>Number(r?.actualizado_en||0);
   function mostrarEstado(){
     estado.textContent=conflictos.size
