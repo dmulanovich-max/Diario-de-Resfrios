@@ -20,7 +20,7 @@
 <div class="card soft amg-card"><div class=section-title>Amgevita</div><div class=section-body><label class=check><input id=amgevita type=checkbox>Aplicación de Amgevita hoy</label></div></div><div class=card><label class=title>Circunstancias</label><div class=grid><label class=check><input id=frio type=checkbox>Frío / traje mojado</label></div></div>
 <div class=card><label class=title>Posible exposición</label><input id=expo type=text placeholder="Ej. reunión, mucha gente, viaje..."></div><div class=card><label class=title>Medicinas</label><textarea id=med rows=4 style="min-height:110px;resize:vertical"></textarea></div><div class=card><label class=title>Médico</label><input id=doc type=text></div><div class=card><label class=title>Observaciones</label><textarea id=obs></textarea></div><button id=save class=save>Guardar día</button><div id=status class=status></div></section>
 <section id=C class=hidden><div class=card><div class=calendar-head><button id=prev class=secondary style="width:auto">←</button><strong id=month></strong><button id=next class=secondary style="width:auto">→</button></div><div id=cal class=calendar><div class=dow>L</div><div class=dow>M</div><div class=dow>X</div><div class=dow>J</div><div class=dow>V</div><div class=dow>S</div><div class=dow>D</div></div><div style="font-weight:700;margin-top:10px">Filtrar:</div><div class=legend id=calLegend><span data-filter=declared><i class="dot coldbig"></i>Resfrío</span><span data-filter=symptoms><i class="dot brown"></i>Síntomas</span><span data-filter=pain><i class="dot orange"></i>Lesión</span><span data-filter=activity><i class="dot lightblue"></i>Actividad</span><span data-filter=rest><i class="dot yellow"></i>Descanso</span><span data-filter=amgevita><i class="dot amggreen"></i>Amgevita</span></div><p class=small>Toca un día para abrirlo.</p></div></section>
-<section id=D class=hidden><div class=card><label class=title>Copia de seguridad</label><div class=small style="margin-bottom:10px">Guarda una copia completa del diario. En iPhone se abrirá Compartir o el archivo de respaldo; usa Compartir → Guardar en Archivos → iCloud Drive.</div><button id=backup class=save type=button>Guardar copia de seguridad</button><button id=syncCloud class=save type=button>Sincronizar registros de este dispositivo</button><button id=restoreBtn type=button style="margin-top:10px;width:100%;padding:12px;border:1px solid #e94b35;border-radius:12px;background:white;color:#b83b29;font-weight:700">Restaurar copia</button><input id=restoreFile type=file accept=".json,application/json" style="display:none"></div><div class=card><label class=title>Exportar</label><button id=export class=secondary>Exportar CSV</button></div><div class=card><label class=title>Registros guardados</label><div id=list></div></div></section></main><script>
+<section id=D class=hidden><div class=card><label class=title>Copia de seguridad</label><div class=small style="margin-bottom:10px">Guarda una copia completa del diario. En iPhone se abrirá Compartir o el archivo de respaldo; usa Compartir → Guardar en Archivos → iCloud Drive.</div><button id=backup class=save type=button>Guardar copia de seguridad</button><div id="cloudStatus" class="small" style="margin:12px 0">Conectando con la nube…</div><button id=syncCloud class=secondary type=button>Revisar sincronización</button><button id=restoreBtn type=button style="margin-top:10px;width:100%;padding:12px;border:1px solid #e94b35;border-radius:12px;background:white;color:#b83b29;font-weight:700">Restaurar copia</button><input id=restoreFile type=file accept=".json,application/json" style="display:none"></div><div class=card><label class=title>Exportar</label><button id=export class=secondary>Exportar CSV</button></div><div class=card><label class=title>Registros guardados</label><div id=list></div></div></section></main><script>
 const SYM=["Dolor de cuerpo", "Cansancio", "Sueño", "Dolor de cabeza", "Pesadez/congestión de cabeza", "Congestión nasal", "Dolor de oído", "Mucosidad", "Tos", "Picazón de pecho", "Dolor de garganta", "Crujido bronquial", "Sensación de frío", "Fiebre", "Molestias estomacales"],PAIN=["Cuádriceps", "Sacroilíaco", "Espalda", "Hombro", "Otro"],ACT=["Surf","Natación","Caminata","Entrenamiento","Fisioterapia"],$=x=>document.getElementById(x);
 function scale(parent,n,kind){let w=document.createElement("div");w.className="item";w.innerHTML=`<div class=name>${n}</div><div class=levels data-kind="${kind}" data-name="${n}">${[0,1,2,3].map((v,i)=>`<button type=button class="lvl ${i?"":"active"}" data-v=${v}>${v} ${["Nada","Leve","Moderado","Fuerte"][v]}</button>`).join("")}</div>`;parent.appendChild(w)}
 SYM.forEach(x=>scale($("sym"),x,"s"));PAIN.forEach(x=>scale($("pain"),x,"p"));ACT.forEach((x,i)=>$("acts").insertAdjacentHTML("beforeend",`<label class=check><input id=a${i} type=checkbox>${x}</label>`));
@@ -34,12 +34,20 @@ function load(f){let r=db()[f];$("fecha").value=f;$("resfrio_declarado").checked
 $("fecha").onchange=e=>load(e.target.value);
 $("save").onclick=async()=>{
   let r=form(),d=db();
-  d[r.fecha]=r;
-  store(d);
-
-  await window.guardarEnFirestore(r.fecha,r);
-
-  $("status").textContent="Guardado ✓";
+  if (!window.guardarEnFirestore) { $("status").textContent="Espera a que se conecte Firebase."; return; }
+  const resultado=await window.guardarEnFirestore(r.fecha,r);
+  if(resultado?.conflicto){
+    $("status").textContent="Hay otra versión de este día. No se ha sobrescrito.";
+    alert("Este día tiene otra versión en la nube. No se ha reemplazado ninguna. Revisa los datos antes de continuar.");
+    return;
+  }
+  if(!resultado?.ok){
+    d[r.fecha]=r;store(d);
+    $("status").textContent="Guardado solo en este dispositivo. Revisa tu conexión.";
+    render();return;
+  }
+  d[r.fecha]=resultado.datos;store(d);
+  $("status").textContent="Guardado en este dispositivo y en la nube ✓";
   setTimeout(()=>$("status").textContent="",1500);
   render();
 };
@@ -118,14 +126,7 @@ paintFilters();
     onAuthStateChanged
   } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
 
-  import {
-      getFirestore,
-      doc,
-      setDoc,
-      getDoc,
-      getDocs,
-      collection
-    } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+  import {getFirestore,doc,setDoc,getDoc,collection,onSnapshot} from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyBTWXjI05AQqFw_P2iBloZQLIpCcKledLE",
@@ -146,86 +147,68 @@ paintFilters();
   window.firebaseGoogleProvider = provider;
   window.firebaseSignIn = () => signInWithPopup(auth, provider);
 
-  async function guardarEnFirestore(fecha, datos) {
-  const user = auth.currentUser;
-  if (!user) return;
-
-  try {
-    await setDoc(
-      doc(firestore, "usuarios", user.uid, "registros", fecha),
-      datos
-    );
-    console.log("Firestore: guardado", fecha);
-  } catch (error) {
-    console.error("Error guardando en Firestore:", error);
+  const estado=document.getElementById("cloudStatus");
+  const conflictos=new Set();
+  let dejarDeEscuchar=null;
+  let ultimoUsuario=null;
+  const normalizar=(r)=>JSON.stringify(Object.fromEntries(Object.entries(r||{}).filter(([k])=>k!=="actualizado_en").sort(([a],[b])=>a.localeCompare(b))));
+  const fechaMod=(r)=>Number(r?.actualizado_en||0);
+  function mostrarEstado(){
+    estado.textContent=conflictos.size
+      ? "Nube conectada. Hay "+conflictos.size+" fecha(s) con versiones distintas sin resolver. Ninguna se ha sobrescrito."
+      : "Sincronización automática conectada ✓";
   }
-}
-
-  window.guardarEnFirestore = guardarEnFirestore;
-  
-  async function subirRegistrosLocales() {
-  const user = auth.currentUser;
-  if (!user) return;
-
-  const registros = db();
-
-  for (const [fecha, datos] of Object.entries(registros)) {
-    try {
-      await setDoc(
-        doc(firestore, "usuarios", user.uid, "registros", fecha),
-        datos,
-        { merge: true }
-      );
-      console.log("Subido a Firestore:", fecha);
-    } catch (error) {
-      console.error("Error subiendo", fecha, error);
-    }
-  }
-}
-
-window.subirRegistrosLocales = subirRegistrosLocales;
-  async function cargarRegistrosDesdeFirestore() {
-  const user = auth.currentUser;
-  if (!user) return;
-
-  try {
-    const snap = await getDocs(
-      collection(firestore, "usuarios", user.uid, "registros")
-    );
-
-    const locales = db();
-
-    snap.forEach((documento) => {
-      const datos = documento.data();
-      const fecha = documento.id;
-
-      if (!locales[fecha]) {
-        locales[fecha] = datos;
+  async function guardarEnFirestore(fecha,datos){
+    const user=auth.currentUser;
+    if(!user)return {ok:false};
+    try{
+      const ref=doc(firestore,"usuarios",user.uid,"registros",fecha);
+      const actual=await getDoc(ref);
+      const remoto=actual.exists()?actual.data():null;
+      const local=db()[fecha];
+      if(remoto && normalizar(remoto)!==normalizar(local)){
+        // Never overwrite a newer cloud version or an ambiguous legacy version.
+        if(!local || fechaMod(remoto)>=fechaMod(local)){
+          conflictos.add(fecha);mostrarEstado();return {conflicto:true};
+        }
       }
-    });
-
-    store(locales);
-    load(document.getElementById("fecha").value);
-    render();
-
-    console.log("Firestore: registros cargados");
-  } catch (error) {
-    console.error("Error cargando Firestore:", error);
+      const nuevo={...datos,actualizado_en:Date.now()};
+      await setDoc(ref,nuevo);
+      conflictos.delete(fecha);mostrarEstado();
+      return {ok:true,datos:nuevo};
+    }catch(e){console.error("No se pudo guardar en la nube",e);return {ok:false};}
   }
-}
-
-window.cargarRegistrosDesdeFirestore = cargarRegistrosDesdeFirestore;
-  const syncBtn = document.getElementById("syncCloud");
-
-syncBtn.addEventListener("click", async () => {
-  if (!auth.currentUser) {
-    alert("Primero entra con Google.");
-    return;
+  window.guardarEnFirestore=guardarEnFirestore;
+  function escucharCambios(user){
+    if(dejarDeEscuchar)dejarDeEscuchar();
+    estado.textContent="Leyendo registros de la nube…";
+    dejarDeEscuchar=onSnapshot(collection(firestore,"usuarios",user.uid,"registros"),snap=>{
+      const locales=db();let cambios=false;
+      snap.forEach(item=>{
+        const fecha=item.id,remoto=item.data(),local=locales[fecha];
+        if(!local){locales[fecha]=remoto;cambios=true;return;}
+        if(normalizar(local)===normalizar(remoto)){
+          if(fechaMod(remoto)>fechaMod(local)){locales[fecha]=remoto;cambios=true;}
+          conflictos.delete(fecha);return;
+        }
+        if(fechaMod(remoto)>fechaMod(local) && fechaMod(remoto)>0){
+          // An undated local record may contain unsynced historical edits.
+          if(fechaMod(local)===0){conflictos.add(fecha);return;}
+          locales[fecha]=remoto;cambios=true;conflictos.delete(fecha);
+        }else if(fechaMod(remoto)===0 || fechaMod(remoto)===fechaMod(local)){
+          conflictos.add(fecha);
+        }
+      });
+      if(cambios){store(locales);render();if(!document.getElementById("D").classList.contains("hidden"))list();}
+      mostrarEstado();
+    },error=>{console.error(error);estado.textContent="Sin conexión con la nube. Tus datos locales permanecen guardados.";});
   }
-
-  await subirRegistrosLocales();
-  alert("Registros de este dispositivo sincronizados.");
-});
+  document.getElementById("syncCloud").onclick=()=>{
+    if(!auth.currentUser){alert("Primero entra con Google.");return;}
+    alert(conflictos.size
+      ? "Hay "+conflictos.size+" fecha(s) con versiones diferentes. No se han reemplazado. Conserva tu copia de seguridad y revisaremos esas fechas."
+      : "La sincronización automática está activa. Los cambios guardados se comparten mediante Firebase.");
+  };
   const loginBtn = document.getElementById("googleLogin");
   const userLabel = document.getElementById("googleUser");
 
@@ -238,20 +221,18 @@ syncBtn.addEventListener("click", async () => {
     }
   });
   
- onAuthStateChanged(auth, async (user) => {
-  if (user) {
-    console.log("Firebase: usuario conectado", user.email);
-    userLabel.textContent = user.email;
-    loginBtn.textContent = "Conectado";
-    loginBtn.disabled = true;
-    await cargarRegistrosDesdeFirestore();
-  } else {
-    console.log("Firebase: usuario no conectado");
-    userLabel.textContent = "";
-    loginBtn.textContent = "Entrar con Google";
-    loginBtn.disabled = false;
-  }
-});
+ onAuthStateChanged(auth,(user)=>{
+   if(user){
+     userLabel.textContent=user.email;
+     loginBtn.textContent="Conectado";loginBtn.disabled=true;
+     if(ultimoUsuario!==user.uid){ultimoUsuario=user.uid;escucharCambios(user);}
+   }else{
+     if(dejarDeEscuchar){dejarDeEscuchar();dejarDeEscuchar=null;}
+     ultimoUsuario=null;
+     userLabel.textContent="";loginBtn.textContent="Entrar con Google";loginBtn.disabled=false;
+     estado.textContent="Inicia sesión con Google para sincronizar.";
+   }
+ });
 
   console.log("Firebase, Google y Firestore preparados correctamente");
 </script>
