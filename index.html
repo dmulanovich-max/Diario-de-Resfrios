@@ -31,14 +31,15 @@ function vals(k){let o={};document.querySelectorAll(`.levels[data-kind="${k}"]`)
 function setv(k,n,v){let g=[...document.querySelectorAll(`.levels[data-kind="${k}"]`)].find(x=>x.dataset.name===n);if(g)g.querySelectorAll(".lvl").forEach(b=>b.classList.toggle("active",+b.dataset.v===+(v||0)))}
 function form(){let s=vals("s"),p=vals("p");return {fecha:$("fecha").value,resfrio_declarado:$("resfrio_declarado").checked,sintomas_niveles:s,sintomas:Object.keys(s).filter(k=>s[k]>0),intensidad:+$("general").value,dolores_niveles:p,dolor_otro:$("otroDolor").value.trim(),actividades:ACT.filter((x,i)=>$("a"+i).checked),actividad_otro:$("otroAct").value.trim(),descanso:$("descanso").checked,siesta:$("siesta").checked,descanso_malestar:$("descanso_malestar").checked,frio:$("frio").checked,amgevita:$("amgevita").checked,exposicion:$("expo").value.trim(),medicinas:$("med").value.trim(),medico:$("doc").value.trim(),observaciones:$("obs").value.trim()}}
 function load(f){let r=db()[f];$("fecha").value=f;$("resfrio_declarado").checked=!!r?.resfrio_declarado;SYM.forEach(n=>{let v=r?.sintomas_niveles?.[n];if(v===undefined)v=(r?.sintomas||[]).includes(n)?1:0;setv("s",n,v)});let old=r?.sintomas_niveles||{};PAIN.forEach(n=>{let v=r?.dolores_niveles?.[n];if(v===undefined)v=n==="Espalda"?(old["Dolor de espalda"]||0):n==="Sacroilíaco"?(old["Dolor sacroilíaco"]||0):n==="Cuádriceps"?(old["Dolor de pierna"]||0):0;setv("p",n,v)});$("general").value=r?.intensidad??0;$("otroDolor").value=r?.dolor_otro||"";ACT.forEach((n,i)=>$("a"+i).checked=(r?.actividades||[]).includes(n)||(n==="Surf"&&!!r?.surf));$("otroAct").value=r?.actividad_otro||"";$("descanso").checked=!!r?.descanso||(r?.actividades||[]).includes("Descanso");$("siesta").checked=!!r?.siesta;$("descanso_malestar").checked=!!r?.descanso_malestar;$("frio").checked=!!r?.frio;$("amgevita").checked=!!r?.amgevita;$("expo").value=r?.exposicion||"";$("med").value=r?.medicinas||"";$("doc").value=r?.medico||"";$("obs").value=r?.observaciones||""}
-$("fecha").onchange=e=>load(e.target.value);
+$("fecha").onchange=e=>{load(e.target.value);$("status").textContent="";};
 $("save").onclick=async()=>{
   let r=form(),d=db();
+  $("status").textContent="Comprobando la fecha "+r.fecha+"…";
   if (!window.guardarEnFirestore) { $("status").textContent="Espera a que se conecte Firebase."; return; }
   const resultado=await window.guardarEnFirestore(r.fecha,r);
   if(resultado?.conflicto){
-    $("status").textContent="Hay otra versión de este día. No se ha sobrescrito.";
-    alert("Este día tiene otra versión en la nube. No se ha reemplazado ninguna. Revisa los datos antes de continuar.");
+    $("status").textContent="Conflicto confirmado para "+r.fecha+". No se ha sobrescrito.";
+    alert("La fecha "+r.fecha+" tiene una versión diferente en Firebase. No se ha reemplazado ninguna. Conserva tu respaldo antes de resolverla.");
     return;
   }
   if(!resultado?.ok){
@@ -65,7 +66,7 @@ function paintFilters(){document.querySelectorAll("#calLegend [data-filter]").fo
   if(!off&&tag)tag.remove();
 })}
 function toggleFilter(k){calFilters[k]=!filterOn(k);paintFilters();render()}
-let cd=new Date();function render(){let y=cd.getFullYear(),m=cd.getMonth(),d=db();$("month").textContent=cd.toLocaleDateString("es-ES",{month:"long",year:"numeric"});let c=$("cal");[...c.querySelectorAll(".day")].forEach(e=>e.remove());let first=(new Date(y,m,1).getDay()+6)%7,days=new Date(y,m+1,0).getDate();for(let i=0;i<first;i++){let e=document.createElement("div");e.className="day empty";c.appendChild(e)}for(let n=1;n<=days;n++){let iso=`${y}-${String(m+1).padStart(2,"0")}-${String(n).padStart(2,"0")}`,r=d[iso],dots=r?`${filterOn("declared")&&declared(r)?'<i class="dot coldbig"></i>':""}${filterOn("symptoms")&&symptoms(r)?'<i class="dot brown"></i>':""}${filterOn("pain")&&pain(r)?'<i class="dot orange"></i>':""}${filterOn("activity")&&activity(r)?'<i class="dot lightblue"></i>':""}${filterOn("rest")&&rest(r)?'<i class="dot yellow"></i>':""}${filterOn("amgevita")&&r.amgevita?'<i class="dot amggreen"></i>':""}`:"",e=document.createElement("button");e.className="day";e.innerHTML=`${n}<div class=dots>${dots}</div>`;e.onclick=()=>{load(iso);show("R")};c.appendChild(e)}}
+let cd=new Date();function render(){let y=cd.getFullYear(),m=cd.getMonth(),d=db();$("month").textContent=cd.toLocaleDateString("es-ES",{month:"long",year:"numeric"});let c=$("cal");[...c.querySelectorAll(".day")].forEach(e=>e.remove());let first=(new Date(y,m,1).getDay()+6)%7,days=new Date(y,m+1,0).getDate();for(let i=0;i<first;i++){let e=document.createElement("div");e.className="day empty";c.appendChild(e)}for(let n=1;n<=days;n++){let iso=`${y}-${String(m+1).padStart(2,"0")}-${String(n).padStart(2,"0")}`,r=d[iso],dots=r?`${filterOn("declared")&&declared(r)?'<i class="dot coldbig"></i>':""}${filterOn("symptoms")&&symptoms(r)?'<i class="dot brown"></i>':""}${filterOn("pain")&&pain(r)?'<i class="dot orange"></i>':""}${filterOn("activity")&&activity(r)?'<i class="dot lightblue"></i>':""}${filterOn("rest")&&rest(r)?'<i class="dot yellow"></i>':""}${filterOn("amgevita")&&r.amgevita?'<i class="dot amggreen"></i>':""}`:"",e=document.createElement("button");e.className="day";e.innerHTML=`${n}<div class=dots>${dots}</div>`;e.onclick=()=>{load(iso);$("status").textContent="";show("R")};c.appendChild(e)}}
 $("prev").onclick=()=>{cd=new Date(cd.getFullYear(),cd.getMonth()-1,1);render()};$("next").onclick=()=>{cd=new Date(cd.getFullYear(),cd.getMonth()+1,1);render()};
 function list(){let r=Object.values(db()).sort((a,b)=>b.fecha.localeCompare(a.fecha));$("list").innerHTML=r.length?r.map(x=>`<div class=entry><strong>${x.fecha}</strong><div class=small>${declared(x)?"Resfrío declarado ":""}${symptoms(x)?"· Síntomas ":""}${pain(x)?"· Dolor/lesión ":""}${activity(x)?"· Actividad ":""}${rest(x)?"· Descanso ":""}${x.amgevita?"· Amgevita":""}</div></div>`).join(""):"Sin registros"}
 function esc(v){let s=Array.isArray(v)?v.join(" | "):String(v??"");return '"'+s.replaceAll('"','""')+'"'}$("backup").onclick=async()=>{
@@ -169,9 +170,10 @@ paintFilters();
       if(remoto && normalizar(remoto)!==normalizar(local)){
         // Never overwrite a newer cloud version or an ambiguous legacy version.
         if(!local || fechaMod(remoto)>=fechaMod(local)){
-          conflictos.add(fecha);mostrarEstado();return {conflicto:true};
+          conflictos.add(fecha);mostrarEstado();return {conflicto:true,fecha};
         }
       }
+      // Un día inexistente en la nube no debe generar conflicto.
       const nuevo={...datos,actualizado_en:Date.now()};
       await setDoc(ref,nuevo);
       conflictos.delete(fecha);mostrarEstado();
@@ -206,7 +208,7 @@ paintFilters();
   document.getElementById("syncCloud").onclick=()=>{
     if(!auth.currentUser){alert("Primero entra con Google.");return;}
     alert(conflictos.size
-      ? "Hay "+conflictos.size+" fecha(s) con versiones diferentes. No se han reemplazado. Conserva tu copia de seguridad y revisaremos esas fechas."
+      ? "Fechas con versiones diferentes: "+[...conflictos].sort().join(", ")+". No se han reemplazado. Conserva tu copia de seguridad."
       : "La sincronización automática está activa. Los cambios guardados se comparten mediante Firebase.");
   };
   const loginBtn = document.getElementById("googleLogin");
